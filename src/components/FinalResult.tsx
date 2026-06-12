@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { GameResult } from "@/types/game";
-import { averageScore, getRank } from "@/lib/rank";
+import { averageScore, calculateSales, getRank } from "@/lib/rank";
 import WoodButton from "./WoodButton";
 
 type Props = {
@@ -43,8 +43,7 @@ export default function FinalResult({ results, onRetry, onBackToTitle }: Props) 
   const [copied, setCopied] = useState(false);
   const average = averageScore(results.map((r) => r.evaluation.score));
   const { rank, title } = getRank(average);
-  const totalScore = results.reduce((sum, r) => sum + r.evaluation.score, 0);
-  const sales = totalScore * 50;
+  const sales = calculateSales(average);
   const p = prosperity[rank];
 
   const shareText = `🏮 酔いどれ注文ミスゲーム 🏮
