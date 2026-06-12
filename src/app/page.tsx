@@ -122,7 +122,7 @@ export default function Home() {
             subMessage="ガラッ……"
           />
         ) : (
-          <div className="mx-auto max-w-5xl p-4 sm:p-8">
+          <div className="mx-auto max-w-5xl p-4 pb-44 sm:p-8 sm:pb-44">
             <header className="mb-6 flex items-center justify-between">
               <h1 className="text-xl font-bold text-accent">
                 🏮 酔いどれ注文ミスゲーム
@@ -146,7 +146,7 @@ export default function Home() {
       )}
 
       {screen === "result" && evaluation && (
-        <div className="flex min-h-screen items-center p-4 sm:p-8">
+        <div className="flex min-h-screen items-center p-4 pb-44 sm:p-8 sm:pb-44">
           <ResultCard
             evaluation={evaluation}
             isLast={round >= TOTAL_CUSTOMERS}
@@ -156,7 +156,7 @@ export default function Home() {
       )}
 
       {screen === "final" && (
-        <div className="flex min-h-screen items-center p-4 sm:p-8">
+        <div className="flex min-h-screen items-center p-4 pb-44 sm:p-8 sm:pb-44">
           <FinalResult
             results={results}
             onRetry={startGame}
