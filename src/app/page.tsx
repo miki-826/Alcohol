@@ -157,7 +157,11 @@ export default function Home() {
 
       {screen === "final" && (
         <div className="flex min-h-screen items-center p-4 sm:p-8">
-          <FinalResult results={results} onRetry={startGame} />
+          <FinalResult
+            results={results}
+            onRetry={startGame}
+            onBackToTitle={() => setScreen("title")}
+          />
         </div>
       )}
 

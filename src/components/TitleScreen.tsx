@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import WoodButton from "./WoodButton";
 
 type Props = {
   onStart: () => void;
@@ -10,23 +9,27 @@ type Props = {
 
 export default function TitleScreen({ onStart, onShowRules }: Props) {
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden">
-      <Image
-        src="/images/title.png"
-        alt="酔いどれ注文ミスゲーム"
-        fill
-        priority
-        className="object-cover"
-      />
-      <div className="absolute inset-0 bg-black/30" />
-      <div className="relative z-10 flex flex-col items-center gap-6 px-4 pt-[40vh] animate-fade-in-up">
-        <div className="flex flex-col gap-4 w-72">
-          <WoodButton label="開店する" onClick={onStart} />
-          <WoodButton label="遊び方を見る" onClick={onShowRules} variant="secondary" />
-        </div>
-        <p className="text-center text-sm text-foreground/90 drop-shadow-md">
-          AI客のムチャぶり注文に、酒と肴と一言で応えろ。
-        </p>
+    <div className="flex min-h-screen items-center justify-center bg-black">
+      <div className="relative aspect-video w-full max-w-[177.78vh] animate-fade-in-up">
+        <Image
+          src="/images/title.png"
+          alt="酔いどれ注文ミスゲーム"
+          fill
+          priority
+          className="object-contain"
+        />
+        <button
+          type="button"
+          onClick={onStart}
+          aria-label="開店する"
+          className="absolute left-[31%] top-[51.5%] h-[14.5%] w-[38%] cursor-pointer rounded-lg transition-all hover:ring-4 hover:ring-accent/80 hover:brightness-110"
+        />
+        <button
+          type="button"
+          onClick={onShowRules}
+          aria-label="遊び方を見る"
+          className="absolute left-[31%] top-[69%] h-[15%] w-[38%] cursor-pointer rounded-lg transition-all hover:ring-4 hover:ring-accent/80 hover:brightness-110"
+        />
       </div>
     </div>
   );
