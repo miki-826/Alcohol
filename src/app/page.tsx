@@ -1,65 +1,167 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
+import type {
+  Customer,
+  Evaluation,
+  GameResult,
+  PlayerChoice,
+  Screen,
+} from "@/types/game";
+import {
+  fallbackCustomers,
+  fallbackEvaluation,
+} from "@/data/fallbackCustomers";
+import { saveGameResult } from "@/lib/supabase";
+import TitleScreen from "@/components/TitleScreen";
+import RuleScreen from "@/components/RuleScreen";
+import CustomerCard from "@/components/CustomerCard";
+import ChoiceSection from "@/components/ChoiceSection";
+import LoadingScreen from "@/components/LoadingScreen";
+import ResultCard from "@/components/ResultCard";
+import FinalResult from "@/components/FinalResult";
+import BgmPlayer from "@/components/BgmPlayer";
+
+const TOTAL_CUSTOMERS = 3;
 
 export default function Home() {
+  const [screen, setScreen] = useState<Screen>("title");
+  const [round, setRound] = useState(1);
+  const [customer, setCustomer] = useState<Customer | null>(null);
+  const [evaluation, setEvaluation] = useState<Evaluation | null>(null);
+  const [results, setResults] = useState<GameResult[]>([]);
+  const [loadingCustomer, setLoadingCustomer] = useState(false);
+
+  const fetchCustomer = async (nextRound: number) => {
+    setLoadingCustomer(true);
+    setScreen("serving");
+    try {
+      const res = await fetch("/api/generate-customer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ round: nextRound, difficulty: "Normal" }),
+      });
+      if (!res.ok) throw new Error(`status ${res.status}`);
+      setCustomer(await res.json());
+    } catch {
+      setCustomer(fallbackCustomers[(nextRound - 1) % fallbackCustomers.length]);
+    } finally {
+      setLoadingCustomer(false);
+    }
+  };
+
+  const startGame = () => {
+    setResults([]);
+    setRound(1);
+    setEvaluation(null);
+    fetchCustomer(1);
+  };
+
+  const submitChoice = async (choice: PlayerChoice) => {
+    if (!customer) return;
+    setScreen("evaluating");
+    let evaluated: Evaluation;
+    try {
+      const res = await fetch("/api/evaluate-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customer, choice }),
+      });
+      if (!res.ok) throw new Error(`status ${res.status}`);
+      evaluated = await res.json();
+    } catch {
+      evaluated = fallbackEvaluation;
+    }
+    const result: GameResult = { customer, choice, evaluation: evaluated };
+    setResults((prev) => [...prev, result]);
+    setEvaluation(evaluated);
+    setScreen("result");
+    saveGameResult(result).catch(() => {});
+  };
+
+  const nextCustomer = () => {
+    if (round >= TOTAL_CUSTOMERS) {
+      setScreen("final");
+      return;
+    }
+    const nextRound = round + 1;
+    setRound(nextRound);
+    setEvaluation(null);
+    fetchCustomer(nextRound);
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <main className="relative min-h-screen">
+      {screen !== "title" && (
+        <div className="pointer-events-none fixed inset-0 -z-10">
+          <Image
+            src="/images/bg-izakaya.png"
+            alt=""
+            fill
+            className="object-cover opacity-50"
+          />
+        </div>
+      )}
+
+      {screen === "title" && (
+        <TitleScreen
+          onStart={startGame}
+          onShowRules={() => setScreen("rules")}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+      )}
+
+      {screen === "rules" && (
+        <RuleScreen onStart={startGame} onBack={() => setScreen("title")} />
+      )}
+
+      {screen === "serving" &&
+        (loadingCustomer || !customer ? (
+          <LoadingScreen
+            message="客が来店中……"
+            subMessage="ガラッ……"
+          />
+        ) : (
+          <div className="mx-auto max-w-5xl p-4 sm:p-8">
+            <header className="mb-6 flex items-center justify-between">
+              <h1 className="text-xl font-bold text-accent">
+                🏮 酔いどれ注文ミスゲーム
+              </h1>
+              <p className="text-sm text-sub-text">
+                {round}人目 / {TOTAL_CUSTOMERS}人中
+              </p>
+            </header>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              <CustomerCard customer={customer} />
+              <ChoiceSection key={round} onSubmit={submitChoice} />
+            </div>
+          </div>
+        ))}
+
+      {screen === "evaluating" && (
+        <LoadingScreen
+          message="マスターが考え中……"
+          subMessage="酒と肴と一言の相性をAIが判定しています"
+        />
+      )}
+
+      {screen === "result" && evaluation && (
+        <div className="flex min-h-screen items-center p-4 sm:p-8">
+          <ResultCard
+            evaluation={evaluation}
+            isLast={round >= TOTAL_CUSTOMERS}
+            onNext={nextCustomer}
+          />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      )}
+
+      {screen === "final" && (
+        <div className="flex min-h-screen items-center p-4 sm:p-8">
+          <FinalResult results={results} onRetry={startGame} />
         </div>
-      </main>
-    </div>
+      )}
+
+      <BgmPlayer />
+    </main>
   );
 }
