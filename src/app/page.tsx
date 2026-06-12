@@ -33,6 +33,8 @@ export default function Home() {
   const [results, setResults] = useState<GameResult[]>([]);
   const [loadingCustomer, setLoadingCustomer] = useState(false);
 
+  const roundDifficulty = ["Easy", "Normal", "Hard"];
+
   const fetchCustomer = async (nextRound: number) => {
     setLoadingCustomer(true);
     setScreen("serving");
@@ -40,7 +42,10 @@ export default function Home() {
       const res = await fetch("/api/generate-customer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ round: nextRound, difficulty: "Normal" }),
+        body: JSON.stringify({
+          round: nextRound,
+          difficulty: roundDifficulty[(nextRound - 1) % roundDifficulty.length],
+        }),
       });
       if (!res.ok) throw new Error(`status ${res.status}`);
       setCustomer(await res.json());

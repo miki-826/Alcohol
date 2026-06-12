@@ -13,7 +13,7 @@ export const fallbackCustomers: Customer[] = [
     orderText:
       "今日は上司に怒られた。でも明日も早い。重すぎず、でも少し救われるやつをくれ。",
     constraints: ["胃に重すぎない", "明日に響きにくい", "少し元気が出る"],
-    difficulty: "Normal",
+    difficulty: "Easy",
     icon: customerIcons[0],
   },
   {
