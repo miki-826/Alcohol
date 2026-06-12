@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { averageScore, getRank } from "./rank";
+import { averageScore, calculateSales, getRank } from "./rank";
 
 describe("averageScore", () => {
   it("3人分のスコアの平均を四捨五入で返す", () => {
@@ -12,6 +12,41 @@ describe("averageScore", () => {
 
   it("小数は四捨五入される", () => {
     expect(averageScore([80, 81])).toBe(81);
+  });
+});
+
+describe("calculateSales", () => {
+  it("満点なら大繁盛の20万円", () => {
+    expect(calculateSales(100)).toBe(200000);
+  });
+
+  it("Sランク帯（90〜100）は15万〜20万円", () => {
+    expect(calculateSales(90)).toBe(150000);
+    expect(calculateSales(95)).toBe(175000);
+  });
+
+  it("Aランク帯（80〜89）は9万〜14万円", () => {
+    expect(calculateSales(80)).toBe(90000);
+    expect(calculateSales(89)).toBe(140000);
+  });
+
+  it("Bランク帯（70〜79）は5万〜8万円", () => {
+    expect(calculateSales(70)).toBe(50000);
+    expect(calculateSales(79)).toBe(80000);
+  });
+
+  it("Cランク帯（60〜69）は2.5万〜4.5万円", () => {
+    expect(calculateSales(60)).toBe(25000);
+    expect(calculateSales(69)).toBe(45000);
+  });
+
+  it("Dランク帯（0〜59）は3千〜2万円", () => {
+    expect(calculateSales(0)).toBe(3000);
+    expect(calculateSales(59)).toBe(20000);
+  });
+
+  it("帯の途中は100円単位で補間される", () => {
+    expect(calculateSales(85)).toBe(117800);
   });
 });
 
